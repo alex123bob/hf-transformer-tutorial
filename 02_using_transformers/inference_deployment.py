@@ -49,7 +49,9 @@ def generate_reply(
         add_generation_prompt=True,
         enable_thinking=False,
     )
+    print(f"full prompt:\n{text}\n")  # Debug: show the full prompt text
     inputs = tokenizer(text, return_tensors="pt").to(DEVICE)
+    print(f"input_ids shape: {inputs}, {inputs['input_ids'].shape}")  # Debug: show input shape
 
     with torch.no_grad():
         output_ids = model.generate(
@@ -62,6 +64,8 @@ def generate_reply(
         )
 
     # Decode only the newly generated tokens (skip the prompt)
+    print(f"output_ids shape: {output_ids.shape}, output_ids: {output_ids}")  # Debug: show output shape
+    print(f"input_ids length: {inputs['input_ids'].shape[1]}")  # Debug: show prompt length
     new_token_ids = output_ids[0][inputs["input_ids"].shape[1]:]
     reply = tokenizer.decode(new_token_ids, skip_special_tokens=True)
     return reply.strip()
