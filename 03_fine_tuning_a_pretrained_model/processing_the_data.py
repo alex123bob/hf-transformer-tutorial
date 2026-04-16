@@ -3,7 +3,7 @@ os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 
 import torch
 from torch.optim import AdamW
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, DataCollatorWithPadding
 
 from datasets import load_dataset
 
@@ -59,4 +59,26 @@ tokenized_dataset = tokenizer(
     truncation=True,
 )
 
-print(f"Tokenized dataset: {tokenized_dataset}")
+# write result into a file, as the result is a more like json format, write it into an appropriate format
+with open("tokenized_dataset.txt", "w") as f:
+    f.write(str(tokenized_dataset))
+
+# print(f"Tokenized dataset: {tokenized_dataset}")
+
+# Use dataset.map to apply the tokenizer to the entire dataset
+def tokenize_function(examples):
+    return tokenizer(examples["sentence1"], examples["sentence2"], truncation=True)
+
+tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
+
+print(f"Tokenized datasets: {tokenized_datasets}")
+
+data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+samples = tokenized_datasets["train"][:8]
+print(f"Samples before tokenization: {raw_datasets['train'][:8]}")
+print(f"Samples before data collator: {samples}")
+samples = {k: v for k, v in samples.items() if k not in ["idx", "sentence1", "sentence2"]}
+print([len(x) for x in samples["input_ids"]])
+
+batch = data_collator(samples)
+print({k: v.shape for k, v in batch.items()})
